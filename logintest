@@ -1,3 +1,5 @@
+browser.findElement('input[name="userNameInput"]');
+
 var browser, result;
 var browser = new Browser(Browser.chromeOptions());
 

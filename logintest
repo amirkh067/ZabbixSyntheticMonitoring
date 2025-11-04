@@ -1,4 +1,6 @@
 browser.findElement('input[name="userNameInput"]');
+browser.findElement('input[name="passwordInput"]');
+browser.findElement('button[type="submit"]');
 
 var browser, result;
 var browser = new Browser(Browser.chromeOptions());

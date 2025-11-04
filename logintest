@@ -1,36 +1,47 @@
-
-const url = 'url';
-const username = 'USERNAME';
-const password = 'PASSWORD';
-
-const start = Date.now();
+var browser, result;
+var browser = new Browser(Browser.chromeOptions());
 
 try {
-    // Step 1 — Open login page
-    browser.open(url);
-    browser.await(() => browser.page().includes('Login'), 5000);
+    var params = JSON.parse(value); // Parameters passed from Zabbix frontend, e.g. {"webURL":"http://gan.vodafone.local/controller/","username":"USERNAME","password":"PASSWORD"}
+    var url = params.webURL;
+    var username = params.username;
+    var password = params.password;
 
-    // Step 2 — Enter credentials and submit (adjust element selectors as needed)
+    // Optional screen size
+    browser.setScreenSize(1366, 768);
+
+    // Step 1 — Navigate to login page
+    browser.navigate(url);
+
+    // Step 2 — Wait for login form to appear
+    browser.awaitElement('input[name="userNameInput"]', 5000);
+
+    // Step 3 — Enter credentials
     browser.element('input[name="userNameInput"]').setValue(username);
     browser.element('input[name="passwordInput"]').setValue(password);
+
+    // Step 4 — Click login button
     browser.element('button[type="submit"]').click();
 
-    // Step 3 — Wait for Overview page
-    browser.await(() => browser.page().includes('Overview'), 10000);
+    // Step 5 — Wait for "Overview" keyword
+    browser.awaitText('Overview', 10000);
 
-    const elapsed = (Date.now() - start) / 1000.0;
-
-    return JSON.stringify({
-        status: 'OK',
-        response_time: elapsed,
-        message: 'Login OK (Overview found)'
-    });
-
-} catch (error) {
-    const elapsed = (Date.now() - start) / 1000.0;
-    return JSON.stringify({
-        status: 'FAIL',
-        response_time: elapsed,
-        message: `Login failed or error: ${error.message}`
-    });
+    // Step 6 — Collect results
+    result = browser.getResult();
+    result.screenshot = browser.getScreenshot();
+    result.status = 'OK';
+    result.message = 'Login OK (Overview found)';
+}
+catch (err) {
+    if (!(err instanceof BrowserError)) {
+        browser.setError(err.message);
+    }
+    result = browser.getResult();
+    result.error = { message: err.message };
+    result.error.screenshot = browser.getScreenshot();
+    result.status = 'FAIL';
+    result.message = 'Login failed or Overview not found';
+}
+finally {
+    return JSON.stringify(result);
 }

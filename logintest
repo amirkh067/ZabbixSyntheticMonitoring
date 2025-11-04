@@ -1,5 +1,3 @@
-// Synthetic Monitoring Script for Zabbix
-// Purpose: Test Vodafone portal login and check if "Overview" appears
 
 const url = 'url';
 const username = 'USERNAME';
@@ -7,39 +5,55 @@ const password = 'PASSWORD';
 
 const start = Date.now();
 
-// Step 1 — Open login page
-const res = HttpRequest.get({ url: url, timeout: 10000 });
-if (res.status !== 200) {
-    return JSON.stringify({
-        status: 'FAIL',
-        message: `Login page not reachable (HTTP ${res.status})`
+try {
+    // Step 1 — Open login page
+    const res = HttpRequest.get({ url: url, timeout: 10000 });
+
+    if (res.status !== 200) {
+        return JSON.stringify({
+            status: 'FAIL',
+            step: 'OpenLoginPage',
+            http_status: res.status,
+            message: 'Login page not reachable',
+            response_time: 0
+        });
+    }
+
+    // Step 2 — Attempt login (adjust parameter names if needed)
+    const loginRes = HttpRequest.post({
+        url: url,
+        timeout: 10000,
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        data: `userNameInput=${encodeURIComponent(username)}&passwordInput=${encodeURIComponent(password)}`
     });
-}
 
-// Step 2 — Try to log in (adjust field names if needed)
-const loginRes = HttpRequest.post({
-    url: url,
-    timeout: 10000,
-    headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    data: `userNameInput=${encodeURIComponent(username)}&passwordInput=${encodeURIComponent(password)}`
-});
+    const elapsed = (Date.now() - start) / 1000.0;
 
-// Step 3 — Measure elapsed time
-const elapsed = (Date.now() - start) / 1000.0;
-
-// Step 4 — Check if "Overview" exists in response
-if (loginRes.status === 200 && loginRes.body.includes('Overview')) {
+    // Step 3 — Check for success keyword
+    if (loginRes.status === 200 && loginRes.body && loginRes.body.includes('Overview')) {
+        return JSON.stringify({
+            status: 'OK',
+            step: 'LoginCheck',
+            http_status: loginRes.status,
+            response_time: elapsed,
+            message: 'Login OK (Overview found)'
+        });
+    } else {
+        return JSON.stringify({
+            status: 'FAIL',
+            step: 'LoginCheck',
+            http_status: loginRes.status,
+            response_time: elapsed,
+            message: 'Login failed or "Overview" not found'
+        });
+    }
+} catch (error) {
+    const elapsed = (Date.now() - start) / 1000.0;
     return JSON.stringify({
-        status: 'OK',
-        response_time: elapsed,
-        message: 'Login OK (Overview found)'
-    });
-} else {
-    return JSON.stringify({
-        status: 'FAIL',
-        response_time: elapsed,
-        message: 'Login failed or Overview not found'
+        status: 'ERROR',
+        message: `Exception: ${error.message}`,
+        response_time: elapsed
     });
 }

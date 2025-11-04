@@ -1,50 +1,59 @@
-browser.findElement('input[name="userNameInput"]');
-browser.findElement('input[name="passwordInput"]');
-browser.findElement('button[type="submit"]');
+// Zabbix 7.0 Browser Synthetic Monitoring
+// Purpose: Check Zabbix login page and find Username field
 
 var browser, result;
 var browser = new Browser(Browser.chromeOptions());
 
 try {
-    var params = JSON.parse(value);
+    var params = JSON.parse(value); 
+    // Expected JSON: {"webURL":"http://your-zabbix-server/zabbix/","username":"Admin","password":"zabbix"}
     var url = params.webURL;
-    var username = params.username;
-    var password = params.password;
 
-    // Optional screen size
     browser.setScreenSize(1366, 768);
 
-    // Step 1 — Navigate to login page
+    // Step 1 — Open Zabbix login page
     browser.navigate(url);
 
-    // Step 2 — Wait for login form to appear
-    browser.awaitElement('input[name="userNameInput"]', 5000);
+    // Step 2 — Wait for username field to load
+    browser.awaitElement('input[name="name"]', 10000);
 
-    // Step 3 — Enter credentials
-    browser.element('input[name="userNameInput"]').setValue(username);
-    browser.element('input[name="passwordInput"]').setValue(password);
+    // Step 3 — Find the username and password fields
+    var usernameField = browser.findElement('input[name="name"]');
+    var passwordField = browser.findElement('input[name="password"]');
 
-    // Step 4 — Click login button
-    browser.element('button[type="submit"]').click();
+    // Optional: Check if both fields exist
+    if (usernameField && passwordField) {
+        // Fill login info (optional)
+        usernameField.setValue(params.username);
+        passwordField.setValue(params.password);
 
-    // Step 5 — Wait for "Overview" keyword
-    browser.awaitText('Overview', 10000);
+        // Click the Login button (CSS selector for Zabbix 7.0)
+        var loginButton = browser.findElement('button[type="submit"]');
+        loginButton.click();
 
-    // Step 6 — Collect results
-    result = browser.getResult();
+        // Step 4 — Wait until dashboard or 'Monitoring' appears
+        browser.awaitText('Monitoring', 10000);
+
+        result = browser.getResult();
+        result.status = 'OK';
+        result.message = 'Zabbix login successful';
+    } else {
+        result = browser.getResult();
+        result.status = 'FAIL';
+        result.message = 'Username or password field not found';
+    }
+
     result.screenshot = browser.getScreenshot();
-    result.status = 'OK';
-    result.message = 'Login OK (Overview found)';
 }
 catch (err) {
     if (!(err instanceof BrowserError)) {
         browser.setError(err.message);
     }
     result = browser.getResult();
+    result.status = 'FAIL';
+    result.message = 'Error: ' + err.message;
     result.error = { message: err.message };
     result.error.screenshot = browser.getScreenshot();
-    result.status = 'FAIL';
-    result.message = 'Login failed or Overview not found';
 }
 finally {
     return JSON.stringify(result);

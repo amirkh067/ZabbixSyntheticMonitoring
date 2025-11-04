@@ -2,7 +2,7 @@ var browser, result;
 var browser = new Browser(Browser.chromeOptions());
 
 try {
-    var params = JSON.parse(value); // Parameters passed from Zabbix frontend, e.g. {"webURL":"http://gan.vodafone.local/controller/","username":"USERNAME","password":"PASSWORD"}
+    var params = JSON.parse(value);
     var url = params.webURL;
     var username = params.username;
     var password = params.password;

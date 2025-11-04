@@ -1,47 +1,16 @@
-var browser, result;
-
 var browser = new Browser(Browser.chromeOptions());
 try {
-    // Set viewport and URL
-    browser.setScreenSize(1280, 800);
     browser.navigate("https://your-zabbix-url/login.php");
-
-    // Wait for page to load
-    //browser.waitForLoad();
-
-    // Try to find the username and password fields
-    var usernameField = browser.findElement(By.cssSelector("input[name='name']"));
-    var passwordField = browser.findElement(By.cssSelector("input[name='password']"));
-    var loginButton   = browser.findElement(By.cssSelector("button[type='submit']"));
-
-    if (!usernameField || !passwordField || !loginButton) {
-        browser.setError("Cannot find login elements.");
-    } else {
-        usernameField.sendKeys("Admin");
-        passwordField.sendKeys("your_password_here");
-        loginButton.click();
-
-        // Wait for navigation after login
-        browser.waitForLoad();
-
-        // Check for 'Overview' text in the HTML
-        var pageSource = browser.getPageSource();
-        if (pageSource.includes("Overview")) {
-            browser.setInfo("Login OK — Overview found.");
-        } else {
-            browser.setError("Login failed — Overview not found.");
-        }
-    }
-
-    // Prepare result
-    result = browser.getResult();
+    browser.waitForLoad();
+    var result = browser.getResult();
+    result.pageTitle = browser.getTitle();
     result.screenshot = browser.getScreenshot();
 }
 catch (err) {
     if (!(err instanceof BrowserError)) {
         browser.setError(err.message);
     }
-    result = browser.getResult();
+    var result = browser.getResult();
     result.error.screenshot = browser.getScreenshot();
 }
 finally {

@@ -7,53 +7,30 @@ const start = Date.now();
 
 try {
     // Step 1 — Open login page
-    const res = HttpRequest.get({ url: url, timeout: 10000 });
+    browser.open(url);
+    browser.await(() => browser.page().includes('Login'), 5000);
 
-    if (res.status !== 200) {
-        return JSON.stringify({
-            status: 'FAIL',
-            step: 'OpenLoginPage',
-            http_status: res.status,
-            message: 'Login page not reachable',
-            response_time: 0
-        });
-    }
+    // Step 2 — Enter credentials and submit (adjust element selectors as needed)
+    browser.element('input[name="userNameInput"]').setValue(username);
+    browser.element('input[name="passwordInput"]').setValue(password);
+    browser.element('button[type="submit"]').click();
 
-    // Step 2 — Attempt login (adjust parameter names if needed)
-    const loginRes = HttpRequest.post({
-        url: url,
-        timeout: 10000,
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        data: `userNameInput=${encodeURIComponent(username)}&passwordInput=${encodeURIComponent(password)}`
-    });
+    // Step 3 — Wait for Overview page
+    browser.await(() => browser.page().includes('Overview'), 10000);
 
     const elapsed = (Date.now() - start) / 1000.0;
 
-    // Step 3 — Check for success keyword
-    if (loginRes.status === 200 && loginRes.body && loginRes.body.includes('Overview')) {
-        return JSON.stringify({
-            status: 'OK',
-            step: 'LoginCheck',
-            http_status: loginRes.status,
-            response_time: elapsed,
-            message: 'Login OK (Overview found)'
-        });
-    } else {
-        return JSON.stringify({
-            status: 'FAIL',
-            step: 'LoginCheck',
-            http_status: loginRes.status,
-            response_time: elapsed,
-            message: 'Login failed or "Overview" not found'
-        });
-    }
+    return JSON.stringify({
+        status: 'OK',
+        response_time: elapsed,
+        message: 'Login OK (Overview found)'
+    });
+
 } catch (error) {
     const elapsed = (Date.now() - start) / 1000.0;
     return JSON.stringify({
-        status: 'ERROR',
-        message: `Exception: ${error.message}`,
-        response_time: elapsed
+        status: 'FAIL',
+        response_time: elapsed,
+        message: `Login failed or error: ${error.message}`
     });
 }

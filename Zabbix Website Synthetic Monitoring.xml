@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>7.0</version>
+    <template_groups>
+        <template_group>
+            <uuid>8353b41e26ee4210a058604cd87dded7</uuid>
+            <name>Zabbix</name>
+        </template_group>
+    </template_groups>
+    <templates>
+        <template>
+            <uuid>c54e75332b344b8e92bb4ce474d38dcd</uuid>
+            <template>Website by Synthetic Monitoring</template>
+            <name>Website by Synthetic Monitoring</name>
+            <groups>
+                <group>
+                    <name>Zabbix</name>
+                </group>
+            </groups>
+            <items>
+                <item>
+                    <uuid>bcc887656d9f4f5ab1b3883f7ebe8d1b</uuid>
+                    <name>Generic Login Page Raw Data</name>
+                    <type>BROWSER</type>
+                    <key>generic.login.page</key>
+                    <delay>2m</delay>
+                    <value_type>TEXT</value_type>
+                    <trends>0</trends>
+                    <params>var browser, result;
+browser = new Browser(Browser.chromeOptions());
+
+try {
+    // Parse JSON parameters from Zabbix
+    var params = JSON.parse(value);
+    var webURL = params.webURL;
+    var username = params.Username;
+    var password = params.Password;
+    var searchString = params.searchString;
+
+    
+    // Step 1: Open login page
+    
+    browser.navigate(webURL);
+    browser.collectPerfEntries(&quot;open page&quot;);
+
+    
+    // Step 2: Enter username
+    
+    var el = browser.findElement(&quot;css selector&quot;, &quot;input[name='username'], input[name='name']&quot;);
+    if (el === null) throw Error(&quot;Cannot find username input field&quot;);
+    el.sendKeys(username);
+
+    
+    // Step 3: Enter password
+    
+    el = browser.findElement(&quot;css selector&quot;, &quot;input[name='password']&quot;);
+    if (el === null) throw Error(&quot;Cannot find password input field&quot;);
+    el.sendKeys(password);
+
+    
+    // Step 4: Click login
+    
+    el = browser.findElement(&quot;css selector&quot;, &quot;button[type='submit'], input[type='submit']&quot;);
+    if (el === null) throw Error(&quot;Cannot find login button&quot;);
+    el.click();
+
+    browser.collectPerfEntries(&quot;login&quot;);
+
+    
+    // Step 5: Verify login success
+    
+    el = browser.findElement(&quot;xpath&quot;, &quot;//*[contains(text(),'Sign Out') or contains(text(),'Logout') or contains(text(),'Welcome')]&quot;);
+    if (el === null) throw Error(&quot;Login likely failed — could not find logout/welcome element&quot;);
+
+    browser.collectPerfEntries(&quot;post-login check&quot;);
+
+    
+    // Step 6: Search for string on page
+    
+    // Make XPath case-insensitive
+    var xpath = &quot;//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÇİĞÖŞÜ', 'abcdefghijklmnopqrstuvwxyzçığöşü'), '&quot; 
+                + searchString.toLowerCase() + &quot;')]&quot;;
+
+    el = browser.findElement(&quot;xpath&quot;, xpath);
+    var found = (el !== null);
+
+    if (!found) {
+        browser.setError(&quot;Search string '&quot; + searchString + &quot;' not found on page&quot;);
+    } else {
+        browser.log(&quot;Found string: &quot; + searchString);
+    }
+
+    
+    // Step 7: Build result
+    
+    result = browser.getResult();
+    result.loginSuccess = true;
+    result.stringFound = found;
+    result.searchString = searchString;
+}
+catch (err) {
+    if (!(err instanceof BrowserError)) {
+        browser.setError(err.message);
+    }
+    result = browser.getResult();
+    result.loginSuccess = false;
+    result.error.screenshot = browser.getScreenshot();
+}
+finally {
+    return JSON.stringify(result);
+}</params>
+                    <parameters>
+                        <parameter>
+                            <name>Password</name>
+                            <value>{$Generic_PASS}</value>
+                        </parameter>
+                        <parameter>
+                            <name>searchString</name>
+                            <value>{$Generic_STRING}</value>
+                        </parameter>
+                        <parameter>
+                            <name>Username</name>
+                            <value>{$Generic_USER}</value>
+                        </parameter>
+                        <parameter>
+                            <name>webURL</name>
+                            <value>{$Generic_URL}</value>
+                        </parameter>
+                    </parameters>
+                </item>
+                <item>
+                    <uuid>e3dd3f70861b4c0b964dca3524edc95c</uuid>
+                    <name>Zabbix Login Page Load Time</name>
+                    <type>DEPENDENT</type>
+                    <key>zabbix.login.load</key>
+                    <delay>0</delay>
+                    <value_type>TEXT</value_type>
+                    <trends>0</trends>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <parameters>
+                                <parameter>$.performance_data.summary.navigation.load_finished</parameter>
+                            </parameters>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>zabbix.login.page</key>
+                    </master_item>
+                </item>
+                <item>
+                    <uuid>3f4ff4c5390d4f85bef6607a6c45dee9</uuid>
+                    <name>Zabbix Login Page Raw Data</name>
+                    <type>BROWSER</type>
+                    <key>zabbix.login.page</key>
+                    <delay>5m</delay>
+                    <value_type>TEXT</value_type>
+                    <trends>0</trends>
+                    <params>var browser, result;
+browser = new Browser(Browser.chromeOptions());
+
+try {
+
+	var params = JSON.parse(value);
+	
+	
+    // Step 1: Open the page
+    browser.navigate(params.webURL);
+    browser.collectPerfEntries(&quot;open page&quot;);
+
+    // Step 2: Enter username
+    var el = browser.findElement(&quot;css selector&quot;, &quot;input[name='name']&quot;);
+    if (el === null) throw Error(&quot;cannot find username input field&quot;);
+    el.sendKeys(params.Username);
+
+    // Step 3: Enter password
+    el = browser.findElement(&quot;css selector&quot;, &quot;input[name='password']&quot;);
+    if (el === null) throw Error(&quot;cannot find password input field&quot;);
+    el.sendKeys(params.Password);
+
+    // Step 4: Click login
+    el = browser.findElement(&quot;css selector&quot;, &quot;button[type='submit']&quot;);
+    if (el === null) throw Error(&quot;cannot find login button&quot;);
+    el.click();
+
+    browser.collectPerfEntries(&quot;login&quot;);
+
+    // Step 5: Verify successful login (logout button)
+    el = browser.findElement(&quot;xpath&quot;, &quot;//a[contains(text(),'Sign out') or contains(text(),'Logout')]&quot;);
+    if (el === null) throw Error(&quot;Login likely failed — could not find logout button.&quot;);
+
+    browser.collectPerfEntries(&quot;post-login check&quot;);
+
+    // Step 6: Search for text on the page
+	var searchString = params.searchString;
+	var xpath = &quot;//*[contains(text(),'&quot; + searchString + &quot;')]&quot;;
+	el = browser.findElement(&quot;xpath&quot;, xpath);
+
+    var found = (el !== null);
+
+    
+	if (!found) {
+		browser.setError(searchString + &quot; not found on page&quot;);
+	}
+    // Step 7: Build result
+    result = browser.getResult();
+    result.loginSuccess = true;
+    result.stringFound = found;
+}
+catch (err) {
+    if (!(err instanceof BrowserError)) {
+        browser.setError(err.message);
+    }
+    result = browser.getResult();
+    result.loginSuccess = false;
+    result.error.screenshot = browser.getScreenshot();
+}
+finally {
+    return JSON.stringify(result);
+}</params>
+                    <parameters>
+                        <parameter>
+                            <name>Password</name>
+                            <value>{$ZABBIX_PASS}</value>
+                        </parameter>
+                        <parameter>
+                            <name>searchString</name>
+                            <value>{$SEARCH_STRING}</value>
+                        </parameter>
+                        <parameter>
+                            <name>Username</name>
+                            <value>{$ZABBIX_USER}</value>
+                        </parameter>
+                        <parameter>
+                            <name>webURL</name>
+                            <value>{$ZABBIX_URL}</value>
+                        </parameter>
+                    </parameters>
+                </item>
+                <item>
+                    <uuid>faf0a8daf1154d29a2c6fc250092ce99</uuid>
+                    <name>Zabbix Login Status</name>
+                    <type>DEPENDENT</type>
+                    <key>zabbix.login.status</key>
+                    <delay>0</delay>
+                    <value_type>TEXT</value_type>
+                    <trends>0</trends>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <parameters>
+                                <parameter>$.loginSuccess</parameter>
+                            </parameters>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>zabbix.login.page</key>
+                    </master_item>
+                </item>
+                <item>
+                    <uuid>4170d6ba08a7449d874c9def5971704d</uuid>
+                    <name>Zabbix Login String Found</name>
+                    <type>DEPENDENT</type>
+                    <key>zabbix.login.string</key>
+                    <delay>0</delay>
+                    <value_type>TEXT</value_type>
+                    <trends>0</trends>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <parameters>
+                                <parameter>$.stringFound</parameter>
+                            </parameters>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>zabbix.login.page</key>
+                    </master_item>
+                </item>
+            </items>
+        </template>
+    </templates>
+</zabbix_export>
